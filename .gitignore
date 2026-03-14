@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Environment variables (secrets)
+.env
+.env.*
+!.env.example
+
+# Runtime logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+
+# Local uploads
+uploads/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
