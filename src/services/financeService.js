@@ -59,8 +59,16 @@ export const syncFinanceFromAppointment = async (appointmentDoc) => {
 };
 
 export const listFinanceEntries = async () => {
-  return FinanceEntry.find()
+  const entries = await FinanceEntry.find()
     .populate("client", "name phone")
     .populate("category", "name valor")
     .sort({ paidAt: -1, createdAt: -1 });
+
+  return entries.map((entry) => {
+    const data = entry.toObject ? entry.toObject() : entry;
+    return {
+      ...data,
+      service: data.category,
+    };
+  });
 };

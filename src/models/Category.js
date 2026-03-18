@@ -1,22 +1,3 @@
-import mongoose from "mongoose";
+import Service from "./Service.js";
 
-const categorySchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    valor: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-  },
-  { timestamps: true },
-);
-
-const Category = mongoose.model("Category", categorySchema);
-
-export default Category;
+export default Service;

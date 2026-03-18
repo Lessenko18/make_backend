@@ -24,7 +24,7 @@ const financeEntrySchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "Service",
     },
     amount: {
       type: Number,

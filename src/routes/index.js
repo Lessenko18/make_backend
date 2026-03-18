@@ -1,6 +1,7 @@
 import { Router } from "express";
 import clientRouter from "./clientRoutes.js";
 import categoryRouter from "./categoryRoutes.js";
+import serviceRouter from "./serviceRoutes.js";
 import appointmentRouter from "./appointmentRoutes.js";
 import financeRouter from "./financeRoutes.js";
 
@@ -11,6 +12,7 @@ router.get("/", (req, res) => {
 });
 
 router.use("/clients", clientRouter);
+router.use("/services", serviceRouter);
 router.use("/categories", categoryRouter);
 router.use("/appointments", appointmentRouter);
 router.use("/finance", financeRouter);

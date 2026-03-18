@@ -9,7 +9,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      ref: "Service",
       required: true,
     },
     scheduledAt: {
