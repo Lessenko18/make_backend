@@ -5,7 +5,7 @@ import {
 
 export const listFinanceEntriesController = async (req, res) => {
   try {
-    const entries = await listFinanceEntries();
+    const entries = await listFinanceEntries(req.query);
     return res.json(entries);
   } catch (error) {
     return res.status(500).json({ message: error.message });
