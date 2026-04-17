@@ -46,6 +46,9 @@ const appointmentSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    googleEventId: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

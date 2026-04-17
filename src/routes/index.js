@@ -6,6 +6,7 @@ import appointmentRouter from "./appointmentRoutes.js";
 import financeRouter from "./financeRoutes.js";
 import authRouter from "./authRoutes.js";
 import userRouter from "./userRoutes.js";
+import googleCalendarRouter from "./googleCalendarRoutes.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/appointments", appointmentRouter);
 router.use("/finance", financeRouter);
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
+router.use("/google-calendar", googleCalendarRouter);
 
 export { router };

@@ -1,6 +1,11 @@
 import Appointment from "../models/Appointment.js";
 import Service from "../models/Service.js";
 import { syncFinanceFromAppointment } from "./financeService.js";
+import {
+  syncAppointmentCreate,
+  syncAppointmentDelete,
+  syncAppointmentUpdate,
+} from "./googleCalendarService.js";
 
 const FINANCE_ELIGIBLE_STATUS = ["concluido", "pago"];
 
@@ -57,6 +62,10 @@ export const createAppointment = async (payload) => {
 
   await syncFinanceFromAppointment(appointment);
 
+  syncAppointmentCreate(appointment).catch((e) =>
+    console.error("Google Calendar create sync failed:", e.message),
+  );
+
   return appointment;
 };
 
@@ -112,6 +121,10 @@ export const updateAppointment = async (id, payload) => {
   await current.save();
   await syncFinanceFromAppointment(current);
 
+  syncAppointmentUpdate(current).catch((e) =>
+    console.error("Google Calendar update sync failed:", e.message),
+  );
+
   return current;
 };
 
@@ -131,6 +144,10 @@ export const deleteAppointment = async (id) => {
   if (appointment) {
     const FinanceEntry = (await import("../models/FinanceEntry.js")).default;
     await FinanceEntry.deleteOne({ appointment: id });
+
+    syncAppointmentDelete(appointment).catch((e) =>
+      console.error("Google Calendar delete sync failed:", e.message),
+    );
   }
 
   return appointment;

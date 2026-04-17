@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
   },
+  googleCalendar: {
+    connected: { type: Boolean, default: false },
+    accessToken: { type: String },
+    refreshToken: { type: String },
+    tokenExpiry: { type: Date },
+  },
 });
 
 const User = mongoose.model("User", userSchema);
