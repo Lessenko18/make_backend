@@ -38,12 +38,22 @@ app.use(async (_req, _res, next) => {
   }
 });
 
+app.use((req, _res, next) => {
+  console.log(`[REQ] ${req.method} ${req.path}`);
+  next();
+});
+
 app.get("/", (req, res) => {
   res.json({ message: "Backend online" });
 });
 app.use("/api", router);
 app.use("/", router);
 app.use(express.static("public"));
+
+app.use((req, res) => {
+  console.log(`[404] Sem rota: ${req.method} ${req.path}`);
+  res.status(404).json({ message: `Rota não encontrada: ${req.method} ${req.path}` });
+});
 
 app.use((error, _req, res, _next) => {
   console.error("Erro no servidor:", {
