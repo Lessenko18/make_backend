@@ -38,7 +38,7 @@ export const handleCallback = async (req, res) => {
     }
 
     const decoded = verifyToken(decodeURIComponent(state));
-    const user = await User.findById(decoded.id || decoded._id || decoded.userId);
+    const user = await User.findById(decoded.sub || decoded.id || decoded._id || decoded.userId);
 
     if (!user) {
       return res.redirect(`${frontendUrl}/agenda?google_calendar=error`);
@@ -70,7 +70,7 @@ export const getStatus = async (req, res) => {
     }
 
     const decoded = verifyToken(authHeader.slice(7));
-    const user = await User.findById(decoded.id || decoded._id || decoded.userId).select(
+    const user = await User.findById(decoded.sub || decoded.id || decoded._id || decoded.userId).select(
       "googleCalendar",
     );
 
@@ -92,7 +92,7 @@ export const disconnect = async (req, res) => {
     }
 
     const decoded = verifyToken(authHeader.slice(7));
-    const user = await User.findById(decoded.id || decoded._id || decoded.userId);
+    const user = await User.findById(decoded.sub || decoded.id || decoded._id || decoded.userId);
 
     if (!user) {
       return res.status(404).json({ message: "Usuário não encontrado" });
