@@ -75,7 +75,7 @@ export const syncFinanceFromAppointment = async (appointmentDoc) => {
       amount: appointmentDoc.price,
       paymentMethod: appointmentDoc.paymentMethod,
       status: "pago",
-      paidAt: appointmentDoc.completedAt || appointmentDoc.scheduledAt,
+      paidAt: appointmentDoc.scheduledAt,
       notes: appointmentDoc.notes,
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
