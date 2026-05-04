@@ -1,16 +1,6 @@
-import path from "path";
-import fs from "fs";
 import Client from "../models/Client.js";
 import { getClientProcedureSnapshot } from "../services/appointmentService.js";
-
-const buildUrl = (req, filename) =>
-  `${req.protocol}://${req.get("host")}/uploads/${filename}`;
-
-const removeFile = (filepath) => {
-  try {
-    fs.unlinkSync(filepath);
-  } catch (_) {}
-};
+import { uploadBuffer, deleteByUrl } from "../config/cloudinary.js";
 
 export const createClient = async (req, res) => {
   try {
@@ -87,17 +77,15 @@ export const uploadProfilePhoto = async (req, res) => {
 
     const client = await Client.findById(req.params.id);
     if (!client) {
-      removeFile(req.file.path);
       return res.status(404).json({ message: "Cliente não encontrado" });
     }
 
-    // Remove foto antiga do disco
     if (client.profilePhoto) {
-      const oldFile = path.join("uploads", path.basename(client.profilePhoto));
-      removeFile(oldFile);
+      await deleteByUrl(client.profilePhoto);
     }
 
-    client.profilePhoto = buildUrl(req, req.file.filename);
+    const result = await uploadBuffer(req.file.buffer, req.file.mimetype);
+    client.profilePhoto = result.secure_url;
     await client.save();
 
     return res.json({ profilePhoto: client.profilePhoto });
@@ -114,12 +102,13 @@ export const uploadGalleryPhotos = async (req, res) => {
 
     const client = await Client.findById(req.params.id);
     if (!client) {
-      req.files.forEach((f) => removeFile(f.path));
       return res.status(404).json({ message: "Cliente não encontrado" });
     }
 
-    const newUrls = req.files.map((f) => buildUrl(req, f.filename));
-    client.photos.push(...newUrls);
+    const uploads = await Promise.all(
+      req.files.map((f) => uploadBuffer(f.buffer, f.mimetype)),
+    );
+    client.photos.push(...uploads.map((r) => r.secure_url));
     await client.save();
 
     return res.json({ photos: client.photos });
@@ -142,9 +131,7 @@ export const deleteGalleryPhoto = async (req, res) => {
 
     client.photos = client.photos.filter((p) => p !== url);
     await client.save();
-
-    const filename = path.basename(url);
-    removeFile(path.join("uploads", filename));
+    await deleteByUrl(url);
 
     return res.json({ photos: client.photos });
   } catch (error) {
