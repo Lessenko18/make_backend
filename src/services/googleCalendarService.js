@@ -27,11 +27,21 @@ export const exchangeCodeForTokens = async (code) => {
   return tokens;
 };
 
+const isAuthError = (err) => {
+  return (
+    err.code === 401 ||
+    err.status === 401 ||
+    err.message?.includes("invalid_grant") ||
+    err.message?.includes("Token has been expired") ||
+    err.message?.includes("Invalid Credentials")
+  );
+};
+
 const buildAuthenticatedClient = (tokens, userId) => {
   const oauth2Client = getOAuthClient();
   oauth2Client.setCredentials(tokens);
 
-  oauth2Client.on("tokens", async (newTokens) => {
+  oauth2Client.on("tokens", (newTokens) => {
     const update = { "googleCalendar.accessToken": newTokens.access_token };
     if (newTokens.expiry_date) {
       update["googleCalendar.tokenExpiry"] = new Date(newTokens.expiry_date);
@@ -39,7 +49,9 @@ const buildAuthenticatedClient = (tokens, userId) => {
     if (newTokens.refresh_token) {
       update["googleCalendar.refreshToken"] = newTokens.refresh_token;
     }
-    await User.findByIdAndUpdate(userId, update);
+    User.findByIdAndUpdate(userId, update).catch((e) =>
+      console.error("Google Calendar token save failed:", e.message),
+    );
   });
 
   return oauth2Client;
@@ -55,6 +67,7 @@ const buildEvent = (appointment) => {
   return {
     summary: `${serviceName} - ${clientName}`,
     description: appointment.notes || "",
+    colorId: "10",
     start: { dateTime: start.toISOString(), timeZone: "America/Sao_Paulo" },
     end: { dateTime: end.toISOString(), timeZone: "America/Sao_Paulo" },
   };
@@ -87,14 +100,25 @@ export const syncAppointmentCreate = async (appointment) => {
     .populate("category", "name")
     .lean();
 
-  const { data } = await calendar.events.insert({
-    calendarId: "primary",
-    resource: buildEvent(populated),
-  });
+  if (!populated) return;
 
-  await Appointment.findByIdAndUpdate(appointment._id, {
-    googleEventId: data.id,
-  });
+  try {
+    const { data } = await calendar.events.insert({
+      calendarId: "primary",
+      resource: buildEvent(populated),
+    });
+
+    await Appointment.findByIdAndUpdate(appointment._id, {
+      googleEventId: data.id,
+    });
+  } catch (err) {
+    if (isAuthError(err)) {
+      await User.findByIdAndUpdate(user._id, {
+        "googleCalendar.connected": false,
+      }).catch(() => {});
+    }
+    throw err;
+  }
 };
 
 export const syncAppointmentUpdate = async (appointment) => {
@@ -118,11 +142,22 @@ export const syncAppointmentUpdate = async (appointment) => {
     .populate("category", "name")
     .lean();
 
-  await calendar.events.update({
-    calendarId: "primary",
-    eventId: appointment.googleEventId,
-    resource: buildEvent(populated),
-  });
+  if (!populated) return;
+
+  try {
+    await calendar.events.update({
+      calendarId: "primary",
+      eventId: appointment.googleEventId,
+      resource: buildEvent(populated),
+    });
+  } catch (err) {
+    if (isAuthError(err)) {
+      await User.findByIdAndUpdate(user._id, {
+        "googleCalendar.connected": false,
+      }).catch(() => {});
+    }
+    throw err;
+  }
 };
 
 export const syncAppointmentDelete = async (appointment) => {
@@ -141,8 +176,17 @@ export const syncAppointmentDelete = async (appointment) => {
   const auth = buildAuthenticatedClient(tokens, user._id);
   const calendar = google.calendar({ version: "v3", auth });
 
-  await calendar.events.delete({
-    calendarId: "primary",
-    eventId: appointment.googleEventId,
-  });
+  try {
+    await calendar.events.delete({
+      calendarId: "primary",
+      eventId: appointment.googleEventId,
+    });
+  } catch (err) {
+    if (isAuthError(err)) {
+      await User.findByIdAndUpdate(user._id, {
+        "googleCalendar.connected": false,
+      }).catch(() => {});
+    }
+    throw err;
+  }
 };

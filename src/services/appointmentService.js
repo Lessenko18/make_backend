@@ -6,6 +6,7 @@ import {
   syncAppointmentDelete,
   syncAppointmentUpdate,
 } from "./googleCalendarService.js";
+import { sendWhatsApp } from "./whatsappService.js";
 
 const FINANCE_ELIGIBLE_STATUS = ["concluido", "pago"];
 
@@ -62,11 +63,39 @@ export const createAppointment = async (payload) => {
 
   await syncFinanceFromAppointment(appointment);
 
-  syncAppointmentCreate(appointment).catch((e) =>
+  await syncAppointmentCreate(appointment).catch((e) =>
     console.error("Google Calendar create sync failed:", e.message),
   );
 
+  sendConfirmationMessage(appointment).catch((e) =>
+    console.error("WhatsApp confirmation failed:", e.message),
+  );
+
   return appointment;
+};
+
+const formatDateTime = (date) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+
+const sendConfirmationMessage = async (appointment) => {
+  const populated = await appointment.populate("client", "name phone");
+  const { name, phone } = populated.client;
+  if (!phone) return;
+
+  const dateStr = formatDateTime(appointment.scheduledAt);
+  const msg =
+    `Olá ${name}! ✅\n\n` +
+    `Seu agendamento foi confirmado para *${dateStr}*.\n\n` +
+    `Qualquer dúvida, é só chamar. Até lá! 💄`;
+
+  await sendWhatsApp(phone, msg);
 };
 
 /**
@@ -121,7 +150,7 @@ export const updateAppointment = async (id, payload) => {
   await current.save();
   await syncFinanceFromAppointment(current);
 
-  syncAppointmentUpdate(current).catch((e) =>
+  await syncAppointmentUpdate(current).catch((e) =>
     console.error("Google Calendar update sync failed:", e.message),
   );
 
@@ -145,7 +174,7 @@ export const deleteAppointment = async (id) => {
     const FinanceEntry = (await import("../models/FinanceEntry.js")).default;
     await FinanceEntry.deleteOne({ appointment: id });
 
-    syncAppointmentDelete(appointment).catch((e) =>
+    await syncAppointmentDelete(appointment).catch((e) =>
       console.error("Google Calendar delete sync failed:", e.message),
     );
   }

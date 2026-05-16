@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { router } from "./routes/index.js";
 import connectDB from "./config/db.js";
+import { initWhatsApp } from "./services/whatsappService.js";
+import { startReminderJob } from "./jobs/reminderJob.js";
 
 dotenv.config();
 
@@ -77,6 +79,9 @@ if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
+
+  initWhatsApp();
+  startReminderJob();
 }
 
 export default app;
